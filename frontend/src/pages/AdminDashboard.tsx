@@ -1,15 +1,16 @@
-import { useEffect, useState } from "react";
-import api from "../api/api";
-import { Garland } from "../types/types";
-import AddGarland from "../components/AddGarland";
+import { useEffect, useState } from 'react';
+import api from '../api/api';
+import { Garland } from '../types/types';
+import AddGarland from '../components/AddGarland';
 
 function AdminDashboard() {
   const [garlands, setGarlands] = useState<Garland[]>([]);
 
   useEffect(() => {
-    api.get("/garlands")
-      .then(res => setGarlands(res.data))
-      .catch(err => console.error(err));
+    api
+      .get('/garlands')
+      .then((res) => setGarlands(res.data))
+      .catch((err) => console.error(err));
   }, []);
 
   return (
@@ -17,7 +18,7 @@ function AdminDashboard() {
       <h1>Admin Dashboard</h1>
       <AddGarland onAdded={() => window.location.reload()} />
       <ul>
-        {garlands.map(g => (
+        {garlands.map((g) => (
           <li key={g._id}>
             {g.name} - ${g.price}
           </li>

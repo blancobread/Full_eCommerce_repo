@@ -1,13 +1,14 @@
-import { Navigate } from "react-router-dom";
-import { isLoggedIn } from "../utils/auth";
-import { JSX } from "react";
+import { Navigate } from 'react-router-dom';
+import { JSX } from 'react';
+import { useAuthStore } from '../store/auth';
 
 interface Props {
   children: JSX.Element;
 }
 
 function PrivateRoute({ children }: Props) {
-  if (!isLoggedIn()) {
+  const isAuthenticated = !!useAuthStore((state) => state.token);
+  if (!isAuthenticated) {
     return <Navigate to="/admin/login" />;
   }
 
