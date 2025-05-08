@@ -15,9 +15,11 @@ function Layout({ children }: { children: React.ReactNode }) {
         <Link to="/" className="text-blue-500">
           Home
         </Link>
-        <Link to="/admin/login" className="text-blue-500">
-          Admin Login
-        </Link>
+        {!isAuthenticated && (
+          <Link to="/admin/login" className="text-blue-500">
+            Admin Login
+          </Link>
+        )}
         {isAuthenticated && (
           <Link to="/admin/dashboard" className="text-blue-500">
             Admin Dashboard

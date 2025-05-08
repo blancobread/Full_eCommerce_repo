@@ -1,15 +1,23 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:5001',
+  baseURL: import.meta.env.VITE_BACKEND_URL || 'http://localhost:5001',
+  withCredentials: false,
 });
 
-// Attach token if exists
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('auth-storage');
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    try {
+      const parsed = JSON.parse(token);
+      if (parsed.state?.token) {
+        config.headers.Authorization = `Bearer ${parsed.state.token}`;
+      }
+    } catch (err) {
+      console.log('Failed to parse err:', err);
+    }
   }
+
   return config;
 });
 
