@@ -1,11 +1,20 @@
+export type GarlandCategory =
+  | 'Birthday'
+  | 'Graduation'
+  | 'Baby Shower'
+  | 'Corporate'
+  | 'Special Moments'
+  | 'Holidays'
+  | 'Other';
+
 export interface Garland {
   _id: string;
   name: string;
   description: string;
   price: number;
   imageUrl: string;
+  category: GarlandCategory;
 }
-
 export interface Order {
   _id?: string;
   customerName: string;
