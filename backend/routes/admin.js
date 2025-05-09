@@ -5,7 +5,8 @@ const bcrypt = require("bcryptjs");
 const passport = require("../auth");
 const { getDB } = require("../db/mongoClient");
 
-const JWT_SECRET = "supersecretkey";
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) throw new Error("JSON WEB TOKEN is missing");
 
 async function hasAdmins() {
   const db = getDB();
@@ -24,20 +25,21 @@ router.post("/create", async (req, res, next) => {
   if (existing)
     return res.status(400).json({ message: "Username already exists" });
 
-  if (await hasAdmins()) {
-    passport.authenticate("jwt", { session: false })(req, res, async () => {
-      const hashedPassword = await bcrypt.hash(password, 10);
-      await db
-        .collection("admins")
-        .insertOne({ username, password: hashedPassword });
-      return res.json({ message: "Admin created" });
-    });
-  } else {
+  const createAdmin = async () => {
     const hashedPassword = await bcrypt.hash(password, 10);
     await db
       .collection("admins")
       .insertOne({ username, password: hashedPassword });
-    return res.json({ message: "First admin created" });
+    return res.json({ message: "Admin created" });
+  };
+
+  if (await hasAdmins()) {
+    passport.authenticate("jwt", { session: false })(req, res, async () => {
+      await createAdmin();
+    });
+  } else {
+    // First-time setup (no admin yet)
+    await createAdmin();
   }
 });
 
@@ -51,11 +53,7 @@ router.post("/login", async (req, res) => {
   const match = await bcrypt.compare(password, admin.password);
   if (!match) return res.status(401).json({ message: "Invalid credentials" });
 
-  const token = jwt.sign(
-    { username, token: req.headers.authorization?.split(" ")[1] },
-    JWT_SECRET,
-    { expiresIn: "1h" }
-  );
+  const token = jwt.sign({ username }, JWT_SECRET, { expiresIn: "1h" });
   res.json({ token });
 });
 

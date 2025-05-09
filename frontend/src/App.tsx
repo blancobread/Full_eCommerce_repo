@@ -1,10 +1,10 @@
 import { Routes, Route, Link } from 'react-router-dom';
-import GarlandList from './pages/GarlandList';
-import OrderForm from './pages/OrderForm';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import { useAuthStore } from './store/auth';
 import PrivateRoute from './components/PrivateRouter';
+import 'keen-slider/keen-slider.min.css';
+import HomePage from './pages/HomePage';
 
 function Layout({ children }: { children: React.ReactNode }) {
   const isAuthenticated = !!useAuthStore((state) => state.token);
@@ -39,8 +39,8 @@ function App() {
           path="/"
           element={
             <>
-              <GarlandList />
-              <OrderForm />
+              <HomePage />
+              {/* <OrderForm /> */}
             </>
           }
         />

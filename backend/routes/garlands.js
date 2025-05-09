@@ -8,9 +8,6 @@ const { ObjectId } = require("mongodb"); // ✅ Add this
 const router = express.Router();
 const jsonParser = express.json();
 
-// --------------------
-// Multer config
-// --------------------
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, "uploads/");
@@ -22,9 +19,6 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// --------------------
-// Upload garland image (protected route -> only admin should upload)
-// --------------------
 router.post(
   "/upload",
   passport.authenticate("jwt", { session: false }),
@@ -48,18 +42,12 @@ router.post(
   }
 );
 
-// --------------------
-// Get all garlands
-// --------------------
 router.get("/", async (req, res) => {
   const db = getDB();
   const garlands = await db.collection("garlands").find().toArray();
   res.json(garlands);
 });
 
-// --------------------
-// Add new garland
-// --------------------
 router.post(
   "/",
   passport.authenticate("jwt", { session: false }),
@@ -93,10 +81,6 @@ router.post(
   }
 );
 
-// --------------------
-// Update garland category (drag/drop change)
-// --------------------
-// POST /garlands/:id/category
 router.post("/:id/category", jsonParser, async (req, res) => {
   try {
     const db = getDB();

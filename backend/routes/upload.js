@@ -28,7 +28,7 @@ router.post("/upload", upload.single("file"), async (req, res) => {
     description: "",
     price: 0,
     imageUrl: `/uploads/${req.file.filename}`,
-    category: "Other", // default category
+    category: "Other",
   };
 
   try {

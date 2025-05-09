@@ -1,20 +1,18 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { getDB } = require('../db/mongoClient');
+const { getDB } = require("../db/mongoClient");
 
-// Place new order
-router.post('/', async (req, res) => {
-    const db = getDB();
-    const newOrder = req.body;
-    const result = await db.collection('orders').insertOne(newOrder);
-    res.json(result);
+router.post("/", async (req, res) => {
+  const db = getDB();
+  const newOrder = req.body;
+  const result = await db.collection("orders").insertOne(newOrder);
+  res.json(result);
 });
 
-// Get all orders
-router.get('/', async (req, res) => {
-    const db = getDB();
-    const orders = await db.collection('orders').find().toArray();
-    res.json(orders);
+router.get("/", async (req, res) => {
+  const db = getDB();
+  const orders = await db.collection("orders").find().toArray();
+  res.json(orders);
 });
 
 module.exports = router;
