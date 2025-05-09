@@ -1,11 +1,12 @@
 const express = require("express");
 const cors = require("cors");
 const { connectDB } = require("./db/mongoClient");
+const path = require("path");
 
 // Import routes
 const garlandsRouter = require("./routes/garlands");
 const ordersRouter = require("./routes/orders");
-const adminRouter = require("./routes/admin"); // Important!!
+const adminRouter = require("./routes/admin");
 
 require("dotenv").config();
 
@@ -14,13 +15,13 @@ const PORT = process.env.PORT || 5001;
 
 // Middleware - must be before routes
 app.use(cors());
-app.use(express.json());
+console.log("Static path:", path.join(__dirname, "uploads"));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-app.use("/uploads", express.static("uploads")); // To serve uploaded images
 // Routes
 app.use("/garlands", garlandsRouter);
-app.use("/orders", ordersRouter);
-app.use("/admin", adminRouter);
+app.use("/admin", express.json(), adminRouter);
+app.use("/orders", express.json(), ordersRouter);
 
 // Start server after DB connects
 connectDB()

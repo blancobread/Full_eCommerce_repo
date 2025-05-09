@@ -3,8 +3,10 @@ const multer = require("multer");
 const path = require("path");
 const { getDB } = require("../db/mongoClient");
 const passport = require("../auth");
+const { ObjectId } = require("mongodb"); // ✅ Add this
 
 const router = express.Router();
+const jsonParser = express.json();
 
 // --------------------
 // Multer config
@@ -27,12 +29,22 @@ router.post(
   "/upload",
   passport.authenticate("jwt", { session: false }),
   upload.single("file"),
-  (req, res) => {
+  async (req, res) => {
     if (!req.file) return res.status(400).json({ message: "No file uploaded" });
 
-    res.json({
+    const db = getDB();
+
+    const newGarland = {
+      name: "",
+      description: "",
+      price: 0,
       imageUrl: `/uploads/${req.file.filename}`,
-    });
+      category: "Other",
+    };
+
+    const result = await db.collection("garlands").insertOne(newGarland);
+
+    res.json({ _id: result.insertedId, ...newGarland });
   }
 );
 
@@ -51,6 +63,7 @@ router.get("/", async (req, res) => {
 router.post(
   "/",
   passport.authenticate("jwt", { session: false }),
+  jsonParser,
   async (req, res) => {
     const db = getDB();
     const { name, description, price, imageUrl, category } = req.body;
@@ -83,23 +96,29 @@ router.post(
 // --------------------
 // Update garland category (drag/drop change)
 // --------------------
-router.post(
-  "/:id/category",
-  passport.authenticate("jwt", { session: false }),
-  async (req, res) => {
+// POST /garlands/:id/category
+router.post("/:id/category", jsonParser, async (req, res) => {
+  try {
     const db = getDB();
     const { id } = req.params;
-    const { category } = req.body;
+    const { category } = req.body || {};
+    if (!category) {
+      return res.status(400).json({ message: "Category is required" });
+    }
 
-    await db
+    const result = await db
       .collection("garlands")
-      .updateOne(
-        { _id: new require("mongodb").ObjectId(id) },
-        { $set: { category } }
-      );
+      .updateOne({ _id: new ObjectId(id) }, { $set: { category } });
+
+    if (result.modifiedCount === 0) {
+      return res.status(404).json({ message: "Garland not found" });
+    }
 
     res.json({ message: "Category updated" });
+  } catch (err) {
+    console.error("Failed to update category", err);
+    res.status(500).json({ message: "Server error" });
   }
-);
+});
 
 module.exports = router;
