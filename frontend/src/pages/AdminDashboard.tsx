@@ -39,15 +39,31 @@ export default function AdminDashboard() {
   const logout = useAuthStore((state) => state.logout);
 
   useEffect(() => {
-    api.get<Garland[]>('/garlands').then((res) => {
-      const withCategories = res.data.map((g) => ({
-        ...g,
-        category: g.category ?? 'Other',
-      }));
+    api
+      .get<{ success: boolean; data: Garland[] }>('/garlands')
+      .then((res) => {
+        const garlandsArray = res.data.data;
 
-      setGarlands(withCategories);
-      groupByCategory(withCategories);
-    });
+        if (!Array.isArray(garlandsArray)) {
+          console.error(
+            'Expected an array, got:',
+            typeof garlandsArray,
+            garlandsArray,
+          );
+          return;
+        }
+
+        const withCategories = garlandsArray.map((g) => ({
+          ...g,
+          category: g.category ?? 'Other',
+        }));
+
+        setGarlands(withCategories);
+        groupByCategory(withCategories);
+      })
+      .catch((err) => {
+        console.error('Failed to fetch garlands:', err);
+      });
   }, []);
 
   const groupByCategory = (garlands: Garland[]) => {
@@ -75,7 +91,10 @@ export default function AdminDashboard() {
   };
 
   const onDragEnd = async (result: DropResult) => {
+    const { destination, droppableId, source } = result;
     if (!result.destination) return;
+    if (source.droppableId === droppableId) return;
+    console.log(result, 'whatami');
 
     const sourceCategory = result.source.droppableId as GarlandCategory;
     const destCategory = result.destination.droppableId as GarlandCategory;
@@ -88,10 +107,10 @@ export default function AdminDashboard() {
 
     const sourceItems = [...categories[sourceCategory]];
     const [moved] = sourceItems.splice(result.source.index, 1);
-    moved.category = destCategory;
+    const movedCopy = { ...moved, category: destCategory };
 
     const destItems = [...categories[destCategory]];
-    destItems.splice(result.destination.index, 0, moved);
+    destItems.splice(result.destination.index, 0, movedCopy);
 
     const newCategories: Record<GarlandCategory, Garland[]> = {
       ...categories,
@@ -102,7 +121,7 @@ export default function AdminDashboard() {
     setCategories(newCategories);
 
     try {
-      await api.post(`/garlands/${moved._id}/category`, {
+      await api.patch(`/garlands/${moved._id}/category`, {
         category: destCategory,
       });
     } catch (err) {

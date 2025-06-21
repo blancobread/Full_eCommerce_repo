@@ -38,7 +38,6 @@ router.post("/create", async (req, res, next) => {
       await createAdmin();
     });
   } else {
-    // First-time setup (no admin yet)
     await createAdmin();
   }
 });

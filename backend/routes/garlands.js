@@ -3,7 +3,7 @@ const multer = require("multer");
 const path = require("path");
 const { getDB } = require("../db/mongoClient");
 const passport = require("../auth");
-const { ObjectId } = require("mongodb"); // ✅ Add this
+const { ObjectId } = require("bson");
 
 const router = express.Router();
 const jsonParser = express.json();
@@ -18,13 +18,31 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage });
+const db = () => getDB().collection("garlands");
+
+router.get("/", async (req, res) => {
+  const garlands = await db().find().toArray();
+  res.json({ success: true, data: garlands });
+});
+
+router.get("/:id", async (req, res) => {
+  const garland = await db().findOne({ _id: new ObjectId(req.params.id) });
+  if (!garland)
+    return res
+      .status(404)
+      .json({ success: false, message: "Garland not found" });
+  res.json({ success: true, data: garland });
+});
 
 router.post(
   "/upload",
   passport.authenticate("jwt", { session: false }),
   upload.single("file"),
   async (req, res) => {
-    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+    if (!req.file)
+      return res
+        .status(400)
+        .json({ success: false, message: "No file uploaded" });
 
     const db = getDB();
 
@@ -34,19 +52,15 @@ router.post(
       price: 0,
       imageUrl: `/uploads/${req.file.filename}`,
       category: "Other",
+      createAt: new Date(),
     };
 
-    const result = await db.collection("garlands").insertOne(newGarland);
-
-    res.json({ _id: result.insertedId, ...newGarland });
+    const result = await db.insertOne(newGarland);
+    res
+      .status(201)
+      .json({ success: true, data: { _id: result.insertedId, ...newGarland } });
   }
 );
-
-router.get("/", async (req, res) => {
-  const db = getDB();
-  const garlands = await db.collection("garlands").find().toArray();
-  res.json(garlands);
-});
 
 router.post(
   "/",
@@ -59,50 +73,53 @@ router.post(
     if (!name || !imageUrl) {
       return res
         .status(400)
-        .json({ message: "Name and Image URL are required" });
+        .json({ success: false, message: "Name and Image URL are required" });
     }
 
-    const result = await db.collection("garlands").insertOne({
+    const newGarland = {
       name,
-      description,
-      price,
+      description: description || "",
+      price: parseFloat(price) || 0,
       imageUrl,
       category: category || "Other",
-    });
+      createdAt: new Date(),
+    };
 
-    res.json({
-      _id: result.insertedId,
-      name,
-      description,
-      price,
-      imageUrl,
-      category,
-    });
+    const result = await db().insertOne(newGarland);
+    res
+      .status(201)
+      .json({ success: true, data: { _id: result.insertedId, ...newGarland } });
   }
 );
 
-router.post("/:id/category", jsonParser, async (req, res) => {
-  try {
-    const db = getDB();
-    const { id } = req.params;
-    const { category } = req.body || {};
-    if (!category) {
-      return res.status(400).json({ message: "Category is required" });
-    }
+router.patch("/:id/category", jsonParser, async (req, res) => {
+  const { id } = req.params;
+  const { category } = req.body;
 
-    const result = await db
-      .collection("garlands")
-      .updateOne({ _id: new ObjectId(id) }, { $set: { category } });
+  // if (!isValidObjectId(id)) {
+  //   return res
+  //     .status(400)
+  //     .json({ success: false, message: "Invalid ID format" });
+  // }
 
-    if (result.modifiedCount === 0) {
-      return res.status(404).json({ message: "Garland not found" });
-    }
-
-    res.json({ message: "Category updated" });
-  } catch (err) {
-    console.error("Failed to update category", err);
-    res.status(500).json({ message: "Server error" });
+  if (!category) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Category is required" });
   }
+
+  const result = await db().updateOne(
+    { _id: new ObjectId(id) },
+    { $set: { category } }
+  );
+
+  if (result.matchedCount === 0) {
+    return res
+      .status(404)
+      .json({ success: false, message: "Garland not found" });
+  }
+
+  res.json({ success: true, message: "Category updated" });
 });
 
 module.exports = router;

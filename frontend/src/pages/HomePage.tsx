@@ -38,9 +38,10 @@ export default function HomePage() {
         Other: [],
       };
 
-      res.data.forEach((g) => {
+      for (let x = 0; x <= res.data.length; x++) {
+        const g = res.data[x];
         grouped[g.category || 'Other'].push(g);
-      });
+      }
 
       setCategories(grouped);
     });
